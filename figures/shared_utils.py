@@ -55,7 +55,7 @@ CAT_ORDER = ['high_departure', 'moderate_departure', 'low',
              'moderate_concentration', 'high_concentration']
 CAT_LABELS = ['High departure (HA < \u22120.67)',
               'Moderate departure (\u22120.67 \u2264 HA < \u22120.33)',
-              'Low alteration (|HA| < 0.33)',
+              'Low alteration (|HA| \u2264 0.33)',
               'Moderate concentration (0.33 < HA \u2264 0.67)',
               'High concentration (HA > 0.67)']
 
