@@ -7,7 +7,7 @@ This repository depends on the separate [`hbv-model`](https://github.com/sopanpa
 ## External data dependencies (not bundled in this repository)
 
 - **CAMELS-GB v2**: catchment attributes and observed discharge. Publicly available from the NERC Environmental Data Service; see Coxon et al. (2026). The topographic attributes file (gauge latitude/longitude, used by the `figures/` scripts) is part of this dataset, as are the hydrologic, hydrogeology, and climatic attributes files used by `catchment_attribute_analysis.py` below. All four are keyed on `gauge_id`.
-- **CHESS-SCAPE**: climate projection forcing (precipitation, temperature, PET). Publicly available from the Centre for Environmental Data Analysis; see Robinson et al. (2023).
+- **CHESS-SCAPE**: climate projection forcing (precipitation, temperature, surface wind, shortwave radiation, relative humidity). Publicly available from the Centre for Environmental Data Analysis; see Robinson et al. (2023).
 
 ## Contents
 
