@@ -25,7 +25,7 @@ CAT_ORDER = [
 ]
 
 CAT_LABELS = {
-    "low":                "Low alteration  |HA| < 0.33",
+    "low":                "Low alteration  |HA| <= 0.33",
     "mod_departure":      "Moderate departure  -0.67 <= HA < -0.33",
     "high_departure":     "High departure  HA < -0.67",
     "mod_concentration":  "Moderate concentration  0.33 < HA <= 0.67",
