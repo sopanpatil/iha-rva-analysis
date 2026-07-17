@@ -2,7 +2,7 @@
 
 Indicators of Hydrologic Alteration (IHA) and Range of Variability Approach (RVA) analysis pipeline for Great Britain, comparing baseline (WY1982–WY2010) and future (WY2051–WY2080) HBV-simulated discharge across four RCP scenarios and four CHESS-SCAPE ensemble members.
 
-This repository depends on [`hbv-model`](https://github.com/sopanpatil/hbv-model) v1.0.0, archived at https://doi.org/10.5281/zenodo.21406134, for the HBV model itself and its calibrated parameters.
+This repository depends on hbv-model v1.0.0, archived at https://doi.org/10.5281/zenodo.21406134, for the HBV model itself and its calibrated parameters.
 
 ## External data dependencies (not bundled in this repository)
 
