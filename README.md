@@ -7,7 +7,8 @@ This repository depends on hbv-model v1.0.0, archived at https://doi.org/10.5281
 ## External data dependencies (not bundled in this repository)
 
 - **CAMELS-GB v2**: catchment attributes and observed discharge. Publicly available from the NERC Environmental Data Service; see Coxon et al. (2026). The topographic attributes file (gauge latitude/longitude, used by the `figures/` scripts) is part of this dataset, as are the hydrologic, hydrogeology, and climatic attributes files used by `catchment_attribute_analysis.py` below. All four are keyed on `gauge_id`.
-- **CHESS-SCAPE**: climate projection forcing (precipitation, temperature, surface wind, shortwave radiation, relative humidity). Publicly available from the Centre for Environmental Data Analysis; see Robinson et al. (2023).
+- **CHESS-SCAPE**: climate projection forcing (precipitation, temperature, wind, humidity, radiation). Publicly available from the Centre for Environmental Data Analysis; see Robinson et al. (2023). PET is not a native CHESS-SCAPE variable; it is derived from these fields via FAO-56 Penman-Monteith.
+- **`chess_scape_output/` (this pipeline's required input — per-ensemble-member HBV discharge)**: this repository contains no code to run HBV. Pre-computed discharge for all four RCPs and ensemble members is archived at [`https://doi.org/10.5281/zenodo.21861386`](https://doi.org/10.5281/zenodo.21861386) as an alternative to running HBV yourself.
 
 ## Contents
 
