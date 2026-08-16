@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# External data dependencies (not bundled -- see hbv-model/dfaa-analysis for
+# provenance). Kept here so they're never accidentally committed if someone
+# sets up a local run with these present.
+chess_scape_output
+calibrated_parameters.csv

@@ -2,14 +2,20 @@
 # -------------------
 # Single shared source of truth for the five-category directional
 # hydrologic alteration (HA) classification scheme (manuscript Methods
-# 3.4), used by chess_scape_iha_analysis.py and, via figures/shared_utils.py,
-# by all figure-generation scripts in figures/.
+# 3.4), used by chess_scape_iha_analysis.py, plot_iha_maps.py,
+# plot_iha_summary_ensemble.py, and plot_iha_agreement_maps.py.
 #
-# Every category boundary (0.33, 0.67, -0.33, -0.67) is resolved
-# consistently by assigning it to the lower-magnitude-of-alteration
-# category, so bins are contiguous with no gaps or overlaps -- verified
-# against all boundary values from -1.0 to +1.0 (the symmetric HA range
-# that results from EXPECTED_FREQ = 0.5; see chess_scape_iha_analysis.py).
+# Extracted into its own module because the same classification logic
+# was previously duplicated across four scripts, with a boundary bug in
+# three of them: at exactly HA == -0.33, `abs(ha) < 0.33` is False and
+# `ha < -0.33` is also False, so the old code fell through to the
+# concentration branch and mislabelled a departure/low-alteration
+# boundary value as "moderate concentration". This version resolves
+# every category boundary (0.33, 0.67, -0.33, -0.67) consistently by
+# assigning it to the lower-magnitude-of-alteration category, so bins
+# are contiguous with no gaps or overlaps -- verified against all
+# boundary values from -1.0 to +1.0 (the symmetric HA range that
+# results from EXPECTED_FREQ = 0.5; see chess_scape_iha_analysis.py).
 
 CAT_COLOURS = {
     "low":                "#cccccc",   # light grey    -- low alteration

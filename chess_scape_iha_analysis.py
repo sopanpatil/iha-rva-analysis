@@ -76,7 +76,10 @@ RVA_LOW_PCTL  = 25
 RVA_HIGH_PCTL = 75
 EXPECTED_FREQ = 0.5   # RVA null expectation -- matches the 50% of the
                       # baseline distribution enclosed by the 25th/75th
-                      # percentile target range (Equation 1, Methods 3.4).
+                      # percentile target range. (Previously set to 1/3,
+                      # which is only correct for 33rd/67th percentile
+                      # tertile boundaries, not for the interquartile
+                      # range used here -- see manuscript correction.)
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +193,11 @@ def compute_iha_period(period_array: np.ndarray, n_years: int,
                    convention, Richter et al. 1996; manuscript Table 1) and
                    passed in unchanged for both the pre and post calls, so
                    that pulse counts in both periods are referenced to the
-                   same fixed flow thresholds.
+                   same fixed flow thresholds. Previously this function
+                   recomputed low_thr/high_thr from whichever period_array
+                   it was given, which meant future-period pulse counts were
+                   silently referenced to the future distribution rather
+                   than the baseline -- see manuscript correction.
 
     Returns
     -------
