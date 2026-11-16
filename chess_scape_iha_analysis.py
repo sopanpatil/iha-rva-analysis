@@ -43,6 +43,12 @@ Three wide-format CSVs (one row per catchment), written to IHA_Results/:
   iha_post_rcp<rcp>_<ens>.csv       – per-parameter mean across the post period
   rva_summary_by_parameter_rcp<rcp>_<ens>.csv
 
+and one long-format table of the IHA parameters for every water year of
+both periods, written to IHA_Results/annual/:
+
+  iha_annual_rcp<rcp>_<ens>.csv.gz  – catchment_id, period (baseline or
+                                      future), water_year, 32 IHA parameters
+
 Run
 ---
     python chess_scape_iha_analysis.py --rcp 85 --ensemble 15
@@ -68,6 +74,9 @@ PRE_START,  PRE_END  = 300,   10739   # Oct 1 1981 – Sep 30 2010  (WY 1982–2
 POST_START, POST_END = 25140, 35939   # Oct 1 2050 – Sep 30 2080  (WY 2051–2080)
 N_PRE_YEARS  = 29    # baseline is 29 water years
 N_POST_YEARS = 30    # future is 30 water years
+PRE_FIRST_WY  = 1982
+POST_FIRST_WY = 2051
+ANNUAL_DIR = os.path.join(OUT_DIR, "annual")
 
 DAYS_PER_YEAR = 360          # 360-day calendar
 MIN_DAYS      = 340          # minimum days for a year to be included
@@ -217,6 +226,22 @@ def compute_iha_period(period_array: np.ndarray, n_years: int,
     return pd.DataFrame(records)
 
 
+def annual_table(cid, pre_df: pd.DataFrame, post_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Stack the per-water-year IHA parameters of both periods for one catchment
+    into a long table with catchment_id, period and water_year columns.
+    """
+    pre = pre_df.copy()
+    pre.insert(0, "water_year", PRE_FIRST_WY + np.arange(len(pre)))
+    pre.insert(0, "period", "baseline")
+    post = post_df.copy()
+    post.insert(0, "water_year", POST_FIRST_WY + np.arange(len(post)))
+    post.insert(0, "period", "future")
+    out = pd.concat([pre, post], ignore_index=True)
+    out.insert(0, "catchment_id", cid)
+    return out
+
+
 def compute_rva_catchment(pre_df: pd.DataFrame,
                            post_df: pd.DataFrame) -> dict:
     """
@@ -334,6 +359,7 @@ def main():
     rva_rows  = {}
     pre_means  = {}
     post_means = {}
+    annual_frames = []
 
     print(f"\nProcessing {n_catchments} catchments …")
     for i, cid in enumerate(catchment_ids):
@@ -353,6 +379,7 @@ def main():
         rva_rows[cid]   = compute_rva_catchment(pre_iha, post_iha)
         pre_means[cid]  = pre_iha.mean().round(4).to_dict()
         post_means[cid] = post_iha.mean().round(4).to_dict()
+        annual_frames.append(annual_table(cid, pre_iha, post_iha))
 
     # -----------------------------------------------------------------------
     # 3. Assemble and save output tables
@@ -375,9 +402,15 @@ def main():
     pre_df.to_csv(pre_path)
     post_df.to_csv(post_path)
 
+    os.makedirs(ANNUAL_DIR, exist_ok=True)
+    annual_path = os.path.join(ANNUAL_DIR, f"iha_annual_rcp{rcp}_{label}.csv.gz")
+    pd.concat(annual_frames, ignore_index=True).to_csv(
+        annual_path, index=False, float_format="%.10g", compression={"method": "gzip", "mtime": 0})
+
     print(f"  {rva_path}")
     print(f"  {pre_path}")
     print(f"  {post_path}")
+    print(f"  {annual_path}")
 
     # -----------------------------------------------------------------------
     # 4. Quick summary: departure/concentration fraction per parameter
