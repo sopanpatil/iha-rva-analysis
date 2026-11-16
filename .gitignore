@@ -26,3 +26,9 @@ Thumbs.db
 # sets up a local run with these present.
 chess_scape_output
 calibrated_parameters.csv
+
+# Cached boundary data and local outputs written by the figure scripts
+figures/_*.gpkg
+figures/_*.geojson
+figures/output/
+ensemble_mean_discharge/

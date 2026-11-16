@@ -1,17 +1,22 @@
 """
-figure2_rcp_divergence.py
-=========================
-Figure 2: Annual median absolute percentage difference in ensemble mean
-HBV-simulated discharge between RCP2.6 and RCP8.5, on a water-year basis,
-used to verify the scenario-neutral baseline period (WY1982-WY2010).
+scenario_divergence.py
+======================
+Supplementary Fig. S1: annual median absolute percentage difference in
+ensemble-mean HBV-simulated discharge between RCP2.6 and RCP8.5, on a
+water-year basis, showing that the scenarios are identical over the
+baseline period (WY1982-WY2010).
 
-Inputs (edit paths as needed):
-    rcp26_hbv_ensemble_mean_discharge.csv
-    rcp85_hbv_ensemble_mean_discharge.csv
+Inputs (written by ../calculate_ensemble_mean_q.py):
+    ../ensemble_mean_discharge/rcp26_hbv_ensemble_mean_discharge.csv
+    ../ensemble_mean_discharge/rcp85_hbv_ensemble_mean_discharge.csv
 
-Output:
-    figure2_rcp_divergence.png  (300 dpi)
+Output (in FIG_OUT, default figures/output/):
+    figS_scenario_divergence.png  (300 dpi)
+
+    python scenario_divergence.py
 """
+
+import os
 
 import pandas as pd
 import numpy as np
@@ -20,9 +25,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-RCP26_PATH = '/mnt/user-data/uploads/rcp26_hbv_ensemble_mean_discharge.csv'
-RCP85_PATH = '/mnt/user-data/uploads/rcp85_hbv_ensemble_mean_discharge.csv'
-OUT_PATH   = '/mnt/user-data/outputs/figure2_rcp_divergence.png'
+HERE = os.path.dirname(os.path.abspath(__file__))
+Q_DIR = os.path.join(HERE, '..', 'ensemble_mean_discharge')
+RCP26_PATH = os.path.join(Q_DIR, 'rcp26_hbv_ensemble_mean_discharge.csv')
+RCP85_PATH = os.path.join(Q_DIR, 'rcp85_hbv_ensemble_mean_discharge.csv')
+OUT_DIR = os.environ.get('FIG_OUT', os.path.join(HERE, 'output'))
+OUT_PATH = os.path.join(OUT_DIR, 'figS_scenario_divergence.png')
 
 BASELINE_END_WY = 2010   # end of scenario-neutral baseline (verified zero-divergence)
 FUTURE_START_WY = 2051
@@ -88,6 +96,7 @@ def main():
               loc='upper right', bbox_to_anchor=(1.0, -0.18), ncol=2, borderaxespad=0)
 
     plt.subplots_adjust(left=0.11, right=0.97, top=0.97, bottom=0.22)
+    os.makedirs(OUT_DIR, exist_ok=True)
     fig.savefig(OUT_PATH, dpi=300, bbox_inches='tight')
     plt.close()
     print(f'Saved {OUT_PATH}')

@@ -13,14 +13,17 @@ used by chess_scape_iha_analysis.py), rather than a separately maintained
 file. This ensures the retained/excluded catchment counts shown here always
 match the 621/671 catchments actually used in the IHA/RVA analysis.
 
-Inputs (edit paths as needed):
-    ../../hbv-model/calibrated_parameters.csv   (via catchment_filter.py, one
-                                                  level up again since this
-                                                  script lives in figures/)
-    camels_gb_v2_topographic_attributes.csv
+Inputs:
+    ../../hbv-model/calibrated_parameters.csv   (hbv-model cloned alongside
+                                                  this repository)
+    <ATTR_DIR>/camels_gb_v2_topographic_attributes.csv
+                                                 (CAMELS-GB v2; ATTR_DIR
+                                                  defaults to figures/)
 
-Output:
+Output (in FIG_OUT, default figures/output/):
     figure1_catchment_map.png  (300 dpi)
+
+    python figure1_catchment_map.py
 """
 
 import os
@@ -39,13 +42,15 @@ from shared_utils import get_gb_boundary, get_gb_regions, load_topo_with_bng, XL
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from catchment_filter import DEFAULT_THRESHOLD
 
-# --- Paths (edit to match your local file locations) ---
-# Default assumes hbv-model is a sibling of the iha-rva-analysis repository
-# root, i.e. this script is at iha-rva-analysis/figures/figure1_catchment_map.py.
-KGE_PATH  = os.path.join(os.path.dirname(__file__), '..', '..', 'hbv-model',
-                          'calibrated_parameters.csv')
-TOPO_PATH = '/mnt/user-data/uploads/camels_gb_v2_topographic_attributes.csv'
-OUT_PATH  = '/mnt/user-data/outputs/figure1_catchment_map.png'
+# --- Paths ---
+# hbv-model is assumed to be cloned alongside the iha-rva-analysis repository,
+# i.e. this script is at iha-rva-analysis/figures/figure1_catchment_map.py.
+HERE = os.path.dirname(os.path.abspath(__file__))
+KGE_PATH = os.path.join(HERE, '..', '..', 'hbv-model', 'calibrated_parameters.csv')
+ATTR_DIR = os.environ.get('ATTR_DIR', HERE)
+TOPO_PATH = os.path.join(ATTR_DIR, 'camels_gb_v2_topographic_attributes.csv')
+OUT_DIR = os.environ.get('FIG_OUT', os.path.join(HERE, 'output'))
+OUT_PATH = os.path.join(OUT_DIR, 'figure1_catchment_map.png')
 
 
 def main():
@@ -123,6 +128,7 @@ def main():
     cb.set_ticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     plt.subplots_adjust(left=0.01, right=0.99, top=0.98, bottom=0.07)
+    os.makedirs(OUT_DIR, exist_ok=True)
     fig.savefig(OUT_PATH, dpi=300, bbox_inches='tight')
     plt.close()
     print(f'Saved {OUT_PATH}  (retained={len(retained)}, excluded={len(excluded)})')

@@ -88,7 +88,7 @@ PARAM_COLS = [
     ('min_90day_ha', '90-day minimum'), ('max_1day_ha', '1-day maximum'),
     ('max_3day_ha', '3-day maximum'), ('max_7day_ha', '7-day maximum'),
     ('max_30day_ha', '30-day maximum'), ('max_90day_ha', '90-day maximum'),
-    ('base_flow_index_ha', 'Base flow index'), ('doy_min_ha', 'Day of minimum flow'),
+    ('base_flow_index_ha', 'Baseflow index'), ('doy_min_ha', 'Day of minimum flow'),
     ('doy_max_ha', 'Day of maximum flow'), ('low_pulse_count_ha', 'Low pulse count'),
     ('low_pulse_duration_mean_ha', 'Low pulse duration'), ('high_pulse_count_ha', 'High pulse count'),
     ('high_pulse_duration_mean_ha', 'High pulse duration'), ('mean_rise_rate_ha', 'Mean rise rate'),
