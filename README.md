@@ -1,89 +1,138 @@
 # iha-rva-analysis
 
-Indicators of Hydrologic Alteration (IHA) and Range of Variability Approach (RVA) analysis pipeline for Great Britain, comparing baseline (WY1982–WY2010) and future (WY2051–WY2080) HBV-simulated discharge across four RCP scenarios and four CHESS-SCAPE ensemble members.
+Indicators of Hydrologic Alteration (IHA) and Range of Variability Approach (RVA) analysis of projected flow-regime change in Great Britain. The pipeline compares baseline (WY1982–WY2010) and future (WY2051–WY2080) HBV-simulated daily discharge for 621 CAMELS-GB v2 catchments, forced with four CHESS-SCAPE ensemble members under four RCP scenarios.
 
-This repository depends on hbv-model, archived at https://doi.org/10.5281/zenodo.21406134, for the HBV model itself and its calibrated parameters.
+This repository contains the code and the per-catchment results behind Patil, Dallison and Jahanshahi, *Climate change drives sharply uneven responses across the full flow regime of British catchments*.
 
-## External data dependencies (not bundled in this repository)
+## Version 2.0.0
 
-- **CAMELS-GB v2**: catchment attributes and observed discharge. Publicly available from the NERC Environmental Data Service; see Coxon et al. (2026). The topographic attributes file (gauge latitude/longitude, used by the `figures/` scripts) is part of this dataset, as are the hydrologic, hydrogeology, and climatic attributes files used by `catchment_attribute_analysis.py` below. All four are keyed on `gauge_id`.
-- **CHESS-SCAPE**: climate projection forcing (precipitation, temperature, wind, humidity, radiation). Publicly available from the Centre for Environmental Data Analysis; see Robinson et al. (2023). PET is not a native CHESS-SCAPE variable; it is derived from these fields via FAO-56 Penman-Monteith.
-- **`chess_scape_output/` (this pipeline's required input — per-ensemble-member HBV discharge)**: this repository contains no code to run HBV. Pre-computed discharge for all four RCPs and ensemble members is archived at [`https://doi.org/10.5281/zenodo.21861386`](https://doi.org/10.5281/zenodo.21861386) as an alternative to running HBV yourself.
+Version 2.0.0 accompanies the revised manuscript and changes the analysis as follows:
+
+- **Per-member analysis.** IHA parameters and RVA statistics are computed separately for each ensemble member against its own baseline, then summarised across the four members. Version 1 averaged discharge across members before the analysis.
+- **Leave-one-out expected frequency.** The expected in-range frequency of the RVA is the leave-one-out coverage of the baseline, instead of the conventional 0.5, which is biased for finite baselines and for count parameters with tied values.
+- **No-change reference.** The 12 comparisons between the baseline periods of different ensemble members give the level of each statistic expected without forced change.
+- **Direction and effect size.** Each departure is split into shifts below and above the target range, and the magnitude of change is given by Cliff's delta. The days of the annual minimum and maximum flow are treated as circular quantities.
+- **Benchmark against observations.** The modelling chain is evaluated over the baseline period against observed flows, including its low-flow performance.
+- **Catchment attributes.** Rank (Spearman) and partial rank correlations of Cliff's delta with four weakly correlated attributes replace the Pearson screen of HA against eight attributes.
+- **CO2 sensitivity.** The RCP8.5 projections are repeated with potential evapotranspiration adjusted for the stomatal response of vegetation to rising CO2.
+
+The version 1 scripts that these replace (`catchment_attribute_analysis.py`, `figures/figures_3_4_5_main.py`, `figures/supplementary_figures_S1_S12.py`) have been removed; they remain available in the archived v1.0.1 release (https://doi.org/10.5281/zenodo.21862874).
+
+## External data and code (not included)
+
+- **hbv-model** (https://doi.org/10.5281/zenodo.21406134): the HBV model and the calibrated parameters (`calibrated_parameters.csv`). The scripts expect the repository to be cloned alongside this one (`../hbv-model/`). `benchmark_observed.py` and `co2_sensitivity_runs.py` run HBV and need the `hbv_model` package on the Python path (`export PYTHONPATH=../hbv-model`).
+- **HBV output for CHESS-SCAPE** (https://doi.org/10.5281/zenodo.21861386): catchment-mean CHESS-SCAPE forcing and the HBV discharge and soil moisture for all RCPs and ensemble members. Place the files in `chess_scape_output/` at the repository root.
+- **CAMELS-GB v2** (Coxon et al., 2026): catchment attributes (topographic, climatic, hydrologic and hydrogeology files, keyed on `gauge_id`) and daily observed time series. Available from the NERC Environmental Data Service.
+- **CHESS-SCAPE** (Robinson et al., 2023): the climate projections, available from the Centre for Environmental Data Analysis. They are only needed to repeat the extraction of the catchment-mean forcing, which is part of the HBV output record above.
 
 ## Contents
 
-- `catchment_filter.py` — filters catchments by validation KGE ≥ 0.5 (621 of 671 retained), reading directly from `hbv-model`'s `calibrated_parameters.csv`. Its default path (`../hbv-model/calibrated_parameters.csv`) assumes `hbv-model` is cloned as a sibling folder alongside this repository; if not, pass `kge_path` explicitly. This is the single source of truth for the KGE threshold and file location — the `figures/` scripts import from here directly rather than duplicating it (see `figures/README.md`).
-- `calculate_ensemble_mean_q.py` — computes the ensemble-mean HBV discharge (averaged across the 4 CHESS-SCAPE ensemble members) for each RCP, used as the primary analytical unit for the IHA/RVA analysis. Writes to `./ensemble_mean_discharge/`.
-- `iha_categories.py` — single shared module defining the five-category directional hydrologic alteration (HA) classification scheme (high/moderate departure, low alteration, moderate/high concentration; see Methods for exact thresholds), used by `chess_scape_iha_analysis.py` and, indirectly, by `figures/shared_utils.py`.
-- `chess_scape_iha_analysis.py` — computes all 32 IHA parameters and applies the RVA comparison (baseline vs. future) for a given RCP, either for a single ensemble member (`--ensemble`) or the ensemble mean (`--mean`, the primary analytical unit used in the paper). Outputs per-catchment HA values and five-category classifications, plus a parameter-level departure/concentration fraction summary, to `IHA_Results/`.
-- `catchment_attribute_analysis.py` — implements the catchment attribute association analysis of Methods 3.5 / Results 4.5. For each of the 32 IHA parameters, each RCP, and eight CAMELS-GB v2 attributes, computes raw Pearson correlations with ensemble-mean HA, plus partial correlations controlling for aridity, each with Benjamini-Hochberg FDR correction. Reads the `rva_results_rcp{26,45,60,85}_ENSEMBLE.csv` files written by `chess_scape_iha_analysis.py --mean` above (default: `IHA_Results/`, so it needs no `--rva-dir` argument if run from the repository root after the main pipeline), and writes `raw_correlation_screen.csv` / `partial_correlation_screen.csv` to `IHA_Results/attribute_correlations/` by default — kept in a subfolder rather than alongside `rva_results_*`/`rva_summary_by_parameter_*` since it's a different unit of observation (one row per correlation test, not per catchment).
-- `figures/` — all figure-generation scripts for the manuscript (Figures 1–5) and supplementary information (Figures S1–S12). See `figures/README.md` for details. These read the `rva_results_*.csv` files produced by `chess_scape_iha_analysis.py` above, so should be run after the main analysis pipeline.
+Core modules
 
-## Running the pipeline
+| File | Purpose |
+|---|---|
+| `catchment_filter.py` | Retains catchments with validation KGE ≥ 0.5 (621 of 671), read from `../hbv-model/calibrated_parameters.csv`. |
+| `iha_categories.py` | The five-category classification of the hydrologic alteration factor (HA): high and moderate departure, low alteration, moderate and high concentration. |
 
-```bash
-# 1. Compute the ensemble-mean discharge for each RCP (requires hbv-model's
-#    calibrated HBV run to already have produced per-ensemble-member discharge)
-python calculate_ensemble_mean_q.py --rcp rcp85
+Analysis scripts, in the order they are run
 
-# 2. Run the IHA/RVA analysis on the ensemble mean (primary analysis)
-python chess_scape_iha_analysis.py --rcp 85 --mean
+| Script | Purpose | Outputs |
+|---|---|---|
+| `calculate_ensemble_mean_q.py` | Ensemble-mean discharge per RCP (used only for the comparison with the version 1 approach and for Supplementary Fig. S1). | `ensemble_mean_discharge/` |
+| `chess_scape_iha_analysis.py` | The 32 IHA parameters for every water year of both periods, for one RCP and one ensemble member (`--ensemble`) or the ensemble mean (`--mean`), and the version 1 RVA tables (expected frequency 0.5). | `IHA_Results/annual/`, `IHA_Results/*.csv` |
+| `iha_null_member_pairs.py` | Baseline IHA parameters of each member computed with the pulse thresholds of every other member, for the no-change reference; checks that the baseline is identical across RCPs. | `IHA_Results/annual/` |
+| `rva_member_analysis.py` | RVA statistics per RCP, member, catchment and parameter (leave-one-out expected frequency, direction, median change, Cliff's delta), the no-change reference, and their summaries. | `IHA_Results/member_rva/` |
+| `nochange_expected_frequency.py` | Mean HA without forced change for three choices of the expected frequency (0.5, in-sample, leave-one-out). | `IHA_Results/member_rva/` |
+| `benchmark_observed.py` | Runs HBV with observed CAMELS-GB v2 forcing: KGE reproduction, low-flow metrics, and baseline IHA parameters for observed flows and each simulation. | `IHA_Results/benchmark/` |
+| `benchmark_analysis.py` | RVA benchmark of the modelling chain (hydrological model, climate forcing, full chain). | `IHA_Results/benchmark/` |
+| `lowflow_robustness.py` | Interannual low-flow agreement with observations, and projected change in catchment subsets with good low-flow performance. | `IHA_Results/benchmark/` |
+| `extract_period_means.py` | Baseline and future means of precipitation, temperature, PET, discharge, actual evapotranspiration and soil moisture. | `IHA_Results/period_means/` |
+| `attribute_associations.py` | Spearman and partial Spearman correlations of Cliff's delta with catchment attributes. | `IHA_Results/attributes/` |
+| `co2_sensitivity_runs.py` | RCP8.5 HBV runs with CO2-adjusted PET. | `IHA_Results/co2_sensitivity*/` |
+| `co2_sensitivity_analysis.py` | Alteration and water balance with the original and CO2-adjusted PET. | `IHA_Results/co2_sensitivity*/` |
 
-# Or, to characterise ensemble uncertainty, run each member individually:
-python chess_scape_iha_analysis.py --rcp 85 --ensemble 01
-python chess_scape_iha_analysis.py --rcp 85 --ensemble 04
-python chess_scape_iha_analysis.py --rcp 85 --ensemble 06
-python chess_scape_iha_analysis.py --rcp 85 --ensemble 15
-```
+`figures/` contains the scripts for all figures in the manuscript and the Supplementary Information; see `figures/README.md`.
 
-Repeat across all four RCPs (`--rcp 26`, `45`, `60`, `85`) for the complete analysis. This produces the `rva_results_rcp<rcp>_<label>.csv` files (both `ENSEMBLE` and all four members) that `figures/` and `catchment_attribute_analysis.py` read.
+## Reproducing the results
 
-```bash
-# 3. Test catchment attribute associations with ensemble-mean HA (Methods 3.5),
-#    once all four RCPs' ENSEMBLE rva_results files exist in IHA_Results/
-python catchment_attribute_analysis.py \
-    --hydrologic-csv camels_gb_v2_hydrologic_attributes.csv \
-    --hydrogeology-csv camels_gb_v2_hydrogeology_attributes.csv \
-    --climatic-csv camels_gb_v2_climatic_attributes.csv \
-    --topographic-csv camels_gb_v2_topographic_attributes.csv
-```
+Run from the repository root, with `hbv-model` cloned alongside it and the HBV output in `chess_scape_output/`. Each script describes its inputs, outputs and options in its header.
 
 ```bash
-# 4. Generate all manuscript and supplementary figures (run from figures/)
+# 1. Yearly IHA parameters for all RCPs, members and the ensemble mean
+for rcp in 26 45 60 85; do
+    python calculate_ensemble_mean_q.py --rcp rcp$rcp
+    python chess_scape_iha_analysis.py --rcp $rcp --mean
+    for ens in 01 04 06 15; do
+        python chess_scape_iha_analysis.py --rcp $rcp --ensemble $ens
+    done
+done
+python iha_null_member_pairs.py --rcp 85
+
+# 2. Per-member RVA statistics and the no-change reference
+python rva_member_analysis.py
+python nochange_expected_frequency.py
+
+# 3. Benchmark against observations (needs the hbv_model package)
+export PYTHONPATH=../hbv-model
+python benchmark_observed.py \
+    --camels-pattern "/path/to/CAMELS-GB/camels_gb_v2_hydromet_daily_timeseries_{id}_*.csv" \
+    --date-col date --precip-col precipitation_cehgear --temp-col temperature_chess \
+    --pet-col pet_chess --q-col discharge_spec --run-start 1970-10-01
+python benchmark_analysis.py
+python lowflow_robustness.py
+
+# 4. Changes in the forcing and model states
+python extract_period_means.py
+
+# 5. Catchment attributes
+python attribute_associations.py --attributes-dir /path/to/CAMELS-GB/attributes
+
+# 6. CO2 sensitivity (RCP8.5; needs the hbv_model package)
+TOPO=/path/to/CAMELS-GB/attributes/camels_gb_v2_topographic_attributes.csv
+python co2_sensitivity_runs.py --topo-csv $TOPO --u2 2
+python co2_sensitivity_runs.py --topo-csv $TOPO --u2 4 --out-dir IHA_Results/co2_sensitivity_u2_4
+python co2_sensitivity_analysis.py
+python co2_sensitivity_analysis.py --co2-dir IHA_Results/co2_sensitivity_u2_4 --run-name co2pet_u2_4
+
+# 7. Figures and tables
 cd figures
+export ATTR_DIR=/path/to/CAMELS-GB/attributes
 python figure1_catchment_map.py
-python figure2_rcp_divergence.py
-python figures_3_4_5_main.py
-python supplementary_figures_S1_S12.py
+python benchmark_climate_figures.py
+python alteration_figures.py
+python supplementary_maps.py
+python scenario_divergence.py
 ```
 
-## Output
+`co2_sensitivity_runs.py` reads RCP8.5 CO2 concentrations from `--co2-file` (`RCP85_MIDYEAR_CONCENTRATIONS.DAT` from the RCP database) if given, and otherwise interpolates the decadal values embedded in the script.
 
-`IHA_Results/` (including its `attribute_correlations/` subfolder) is committed to this repository. At under 20 MB across 80-odd CSVs, it is the small, final, per-catchment result set that directly underpins every figure, table, and reported percentage in the manuscript — committing it means a tagged release of this repository (and its Zenodo archive) captures the exact code-and-results pair used in the paper, rather than requiring a separately versioned data record. If you re-run the pipeline locally, these files will be regenerated in place; check `git diff` before committing over them, since the ones currently in the repo are the specific run archived at the release DOI cited in the manuscript's Open Research section.
+## Results
 
-By contrast, `chess_scape_output/` and `ensemble_mean_discharge/` (the per-ensemble-member and ensemble-mean daily discharge time series) are excluded via `.gitignore`. `ensemble_mean_discharge/` is regenerable from `chess_scape_output/` via `calculate_ensemble_mean_q.py` above. `chess_scape_output/` itself is not produced by any code in this repository — it requires an HBV run, either via a sibling pipeline (e.g. `run_hbv_chess_scape.py` in [`dfaa-analysis`](https://github.com/sopanpatil/dfaa-analysis)) or downloaded directly from [`https://doi.org/10.5281/zenodo.21861386`](https://doi.org/10.5281/zenodo.21861386) — see "External data dependencies" above.
+`IHA_Results/` holds the results used in the manuscript, so that a tagged release captures the exact code and results reported. Re-running the pipeline regenerates these files in place.
 
-Each run of `chess_scape_iha_analysis.py` writes three CSVs to `IHA_Results/`:
+| Folder | Contents |
+|---|---|
+| `annual/` | `iha_annual_rcp<rcp>_<member>.csv.gz`: the 32 IHA parameters for every catchment and water year of the baseline and future periods (`<member>` is `01`, `04`, `06`, `15` or `ENSEMBLE`). `iha_annual_null_ref<A>_cmp<B>.csv.gz`: baseline IHA parameters of member B with the pulse thresholds of member A. `baseline_identity_check.csv`. |
+| `member_rva/` | `rva_catchment_member.csv.gz` (one row per RCP, member, catchment and parameter), `rva_catchment_ensemble.csv.gz` (summarised across members), `rva_null_catchment.csv.gz` (no-change comparisons), `rva_summary_by_parameter.csv` (percentages of catchments per category, direction and magnitude, with the no-change levels), `nochange_expected_frequency.csv`. |
+| `benchmark/` | KGE reproduction, low-flow metrics, baseline IHA parameters of observed and simulated flows, the RVA benchmark and the low-flow robustness tables. |
+| `period_means/` | Baseline and future means of the forcing and model states. |
+| `attributes/` | Attribute intercorrelation and the rank correlations with Cliff's delta. |
+| `co2_sensitivity/`, `co2_sensitivity_u2_4/` | CO2-adjusted runs for wind speeds of 2 and 4 m/s, with their summaries and a check that the control run reproduces the stored discharge. |
+| top level | The per-run RVA tables of version 1 (`rva_results_*`, `iha_pre_*`, `iha_post_*`, `rva_summary_by_parameter_*`; expected frequency 0.5), kept for the comparison with ensemble-mean discharge. |
 
-- `rva_results_rcp<rcp>_<label>.csv` — one row per catchment, with `<param>_ha` (the hydrologic alteration value) and `<param>_cat` (five-category classification) for each of the 32 IHA parameters. `<label>` is `ENSEMBLE` for the ensemble-mean run, or the member ID (`01`/`04`/`06`/`15`) for an individual member.
-- `iha_pre_rcp<rcp>_<label>.csv` / `iha_post_rcp<rcp>_<label>.csv` — mean IHA parameter values for the baseline and future periods respectively.
-- `rva_summary_by_parameter_rcp<rcp>_<label>.csv` — parameter-level summary: mean HA, and the fraction of catchments in departure / high departure / concentration / high concentration, ranked by total departure fraction (matching the parameter ranking reported in the paper's Results).
-
-`catchment_attribute_analysis.py` writes two further CSVs to `IHA_Results/attribute_correlations/` by default:
-
-- `raw_correlation_screen.csv` — one row per (RCP, IHA parameter, attribute): raw Pearson `r`, `p`, and FDR-corrected `p_fdr`/`sig_fdr` (1,024 rows: 32 parameters x 8 attributes x 4 RCPs).
-- `partial_correlation_screen.csv` — as above, but partial correlation `r_partial` controlling for aridity, for the 7 non-aridity attributes (896 rows: 32 parameters x 7 attributes x 4 RCPs).
-
-`figures/` scripts write 300 dpi PNGs (Figures 1–5, S1–S12) to the path set in `OUTPUTS`/`OUT_PATH` near the top of each script.
+`chess_scape_output/` and `ensemble_mean_discharge/` are not included (see `.gitignore`).
 
 ## Requirements
 
 ```bash
-pip install numpy pandas scipy statsmodels --break-system-packages
+pip install numpy pandas scipy statsmodels
+pip install matplotlib geopandas pyproj shapely   # figures
 ```
-
-(`figures/` has its own additional requirements — see `figures/README.md`.)
 
 ## Citation
 
 If you use this code, please cite the archived release (see `CITATION.cff`).
+
+## Licence
+
+MIT (see `LICENSE`).
