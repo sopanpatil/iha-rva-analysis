@@ -38,10 +38,11 @@ Analysis scripts, in the order they are run
 
 | Script | Purpose | Outputs |
 |---|---|---|
-| `calculate_ensemble_mean_q.py` | Ensemble-mean discharge per RCP (used only for the comparison with the version 1 approach and for Supplementary Fig. S1). | `ensemble_mean_discharge/` |
+| `calculate_ensemble_mean_q.py` | Ensemble-mean discharge per RCP (used only for the comparison with the member-wise analysis and for Supplementary Fig. S1). | `ensemble_mean_discharge/` |
 | `chess_scape_iha_analysis.py` | The 32 IHA parameters for every water year of both periods, for one RCP and one ensemble member (`--ensemble`) or the ensemble mean (`--mean`), and the version 1 RVA tables (expected frequency 0.5). | `IHA_Results/annual/`, `IHA_Results/*.csv` |
 | `iha_null_member_pairs.py` | Baseline IHA parameters of each member computed with the pulse thresholds of every other member, for the no-change reference; checks that the baseline is identical across RCPs. | `IHA_Results/annual/` |
 | `rva_member_analysis.py` | RVA statistics per RCP, member, catchment and parameter (leave-one-out expected frequency, direction, median change, Cliff's delta), the no-change reference, and their summaries. | `IHA_Results/member_rva/` |
+| `ensemble_mean_rva.py` | Departure and concentration from ensemble-mean discharge with the same method, for comparison with the member-wise analysis (Supplementary Fig. S18). | `IHA_Results/member_rva/` |
 | `nochange_expected_frequency.py` | Mean HA without forced change for three choices of the expected frequency (0.5, in-sample, leave-one-out). | `IHA_Results/member_rva/` |
 | `benchmark_observed.py` | Runs HBV with observed CAMELS-GB v2 forcing: KGE reproduction, low-flow metrics, and baseline IHA parameters for observed flows and each simulation. | `IHA_Results/benchmark/` |
 | `benchmark_analysis.py` | RVA benchmark of the modelling chain (hydrological model, climate forcing, full chain). | `IHA_Results/benchmark/` |
@@ -70,6 +71,7 @@ python iha_null_member_pairs.py --rcp 85
 
 # 2. Per-member RVA statistics and the no-change reference
 python rva_member_analysis.py
+python ensemble_mean_rva.py
 python nochange_expected_frequency.py
 
 # 3. Benchmark against observations (needs the hbv_model package)
@@ -113,12 +115,12 @@ python scenario_divergence.py
 | Folder | Contents |
 |---|---|
 | `annual/` | `iha_annual_rcp<rcp>_<member>.csv.gz`: the 32 IHA parameters for every catchment and water year of the baseline and future periods (`<member>` is `01`, `04`, `06`, `15` or `ENSEMBLE`). `iha_annual_null_ref<A>_cmp<B>.csv.gz`: baseline IHA parameters of member B with the pulse thresholds of member A. `baseline_identity_check.csv`. |
-| `member_rva/` | `rva_catchment_member.csv.gz` (one row per RCP, member, catchment and parameter), `rva_catchment_ensemble.csv.gz` (summarised across members), `rva_null_catchment.csv.gz` (no-change comparisons), `rva_summary_by_parameter.csv` (percentages of catchments per category, direction and magnitude, with the no-change levels), `nochange_expected_frequency.csv`. |
+| `member_rva/` | `rva_catchment_member.csv.gz` (one row per RCP, member, catchment and parameter), `rva_catchment_ensemble.csv.gz` (summarised across members), `rva_null_catchment.csv.gz` (no-change comparisons), `rva_summary_by_parameter.csv` (percentages of catchments per category, direction and magnitude, with the no-change levels), `rva_summary_ensemble_mean.csv` (the same from ensemble-mean discharge), `nochange_expected_frequency.csv`. |
 | `benchmark/` | KGE reproduction, low-flow metrics, baseline IHA parameters of observed and simulated flows, the RVA benchmark and the low-flow robustness tables. |
 | `period_means/` | Baseline and future means of the forcing and model states. |
 | `attributes/` | Attribute intercorrelation and the rank correlations with Cliff's delta. |
 | `co2_sensitivity/`, `co2_sensitivity_u2_4/` | CO2-adjusted runs for wind speeds of 2 and 4 m/s, with their summaries and a check that the control run reproduces the stored discharge. |
-| top level | The per-run RVA tables of version 1 (`rva_results_*`, `iha_pre_*`, `iha_post_*`, `rva_summary_by_parameter_*`; expected frequency 0.5), kept for the comparison with ensemble-mean discharge. |
+| top level | The per-run RVA tables in the version 1 format (`rva_results_*`, `iha_pre_*`, `iha_post_*`, `rva_summary_by_parameter_*`; expected frequency 0.5), still written by `chess_scape_iha_analysis.py`. The analysis in the manuscript uses the tables in `annual/` and `member_rva/`. |
 
 `chess_scape_output/` and `ensemble_mean_discharge/` are not included (see `.gitignore`).
 

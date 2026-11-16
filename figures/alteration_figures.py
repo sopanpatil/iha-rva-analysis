@@ -20,7 +20,7 @@ Figures built from the per-member RVA statistics (../rva_member_analysis.py):
                           departure from ensemble-mean discharge against the
                           mean of member-wise departure (supplementary)
 
-Inputs: ../IHA_Results/member_rva/*, ../IHA_Results/rva_summary_by_parameter_rcp*_ENSEMBLE.csv,
+Inputs: ../IHA_Results/member_rva/* (../rva_member_analysis.py, ../ensemble_mean_rva.py),
 ../IHA_Results/attributes/ (attribute_associations.py), and the CAMELS-GB v2
 topographic and climatic attribute files in ATTR_DIR (default: figures/).
 Outputs: PNG files (300 dpi) in FIG_OUT (default: figures/output/); with FIG_PDF=1,
@@ -46,7 +46,6 @@ from shared_utils import (AGR_COLOURS, AGR_LABELS, MAP_KW, PARAM_COLS, RCP_LABEL
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RVA_DIR = os.path.join(HERE, "..", "IHA_Results", "member_rva")
-ENS_MEAN_DIR = os.path.join(HERE, "..", "IHA_Results")
 ATTR_DIR = os.environ.get("ATTR_DIR", HERE)
 TOPO_CSV = os.path.join(ATTR_DIR, "camels_gb_v2_topographic_attributes.csv")
 OUT_DIR = os.environ.get("FIG_OUT", os.path.join(HERE, "output"))
@@ -260,10 +259,10 @@ def fig_agreement_maps(ens, coords):
 
 
 def fig_ensemble_mean_vs_members(summary):
+    ens_mean = pd.read_csv(os.path.join(RVA_DIR, "rva_summary_ensemble_mean.csv"))
     fig, ax = plt.subplots(figsize=(3.6, 3.6))
     for rcp, lab, col in zip(RCPS, RCP_LABELS, ["#9ec5f0", "#5a9be0", "#2a78d6", "#0d3d7a"]):
-        v1 = pd.read_csv(os.path.join(ENS_MEAN_DIR, f"rva_summary_by_parameter_rcp{rcp}_ENSEMBLE.csv")
-                         ).set_index("parameter").frac_departure * 100
+        v1 = ens_mean[ens_mean.rcp == rcp].set_index("parameter").pct_departure
         s = summary[summary.rcp == rcp].set_index("parameter").pct_departure
         ax.plot(s.loc[v1.index], v1, "o", ms=3.5, mfc=col, mec="white", mew=0.3, label=lab)
     ax.plot([0, 100], [0, 100], color=INK2, lw=0.6, ls="--")
