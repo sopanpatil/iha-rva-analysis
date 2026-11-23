@@ -13,7 +13,7 @@ Figures and tables from the benchmark and period-mean outputs:
                          winter precipitation by member and RCP; (c) low-flow and
                          high-flow departure against warming
   fig_change_maps        RCP8.5 change (median of members) in summer precipitation,
-                         annual PET, annual AET and summer soil moisture
+                         summer PET, summer AET and summer soil moisture
   figS_change_maps_all   as fig_change_maps plus temperature, for all four RCPs
 
 Tables written as CSV files to FIG_OUT/tables/:
@@ -44,6 +44,7 @@ from alteration_figures import (GRID, HERE, INK, INK2, LABEL, MAP_KW, MEMBER_STY
 ROOT = os.path.join(HERE, "..")
 BENCH = os.path.join(ROOT, "IHA_Results", "benchmark")
 PMEANS = os.path.join(ROOT, "IHA_Results", "period_means", "period_means.csv.gz")
+PMEANS_AET = os.path.join(ROOT, "IHA_Results", "period_means", "period_means_aet.csv.gz")
 TABLE_DIR = os.path.join(OUT_DIR, "tables")
 LOW = ["min_1day", "min_3day", "min_7day", "min_30day", "min_90day", "base_flow_index",
        "month_10_Jul", "month_11_Aug", "month_12_Sep"]
@@ -54,6 +55,10 @@ RCP_SHADE = {26: "#c6dbef", 45: "#6baed6", 60: "#2171b5", 85: "#08306b"}
 def period_changes():
     """Per rcp, member, catchment: changes in each variable/season (abs for tas, % otherwise)."""
     d = pd.read_csv(PMEANS, dtype={"member": str})
+    if os.path.exists(PMEANS_AET):
+        # HBV-simulated AET (../simulated_aet.py) replaces the water-balance estimate P - Q
+        aet = pd.read_csv(PMEANS_AET, dtype={"member": str})
+        d = pd.concat([d[d.variable != "aet"], aet], ignore_index=True)
     d["member"] = d.member.str.zfill(2)
     w = d.pivot_table(index=["rcp", "member", "catchment_id", "variable", "season"],
                       columns="period", values="value").reset_index()
@@ -168,8 +173,8 @@ def fig_member_climate(d):
 
 
 MAP_VARS = [("pr", "JJA", "Summer precipitation (%)", "BrBG", 40),
-            ("pet", "annual", "Annual PET (%)", "Oranges", None),
-            ("aet", "annual", "Annual AET (%)", "BrBG", 20),
+            ("pet", "JJA", "Summer PET (%)", "Oranges", None),
+            ("aet", "JJA", "Summer AET (%)", "BrBG", 20),
             ("sm", "JJA", "Summer soil moisture (%)", "BrBG", 40)]
 
 

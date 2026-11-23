@@ -54,6 +54,16 @@ RCPS = [26, 45, 60, 85]
 MEMBERS = ["01", "04", "06", "15"]
 LABEL = {c[:-3]: lab for c, lab in PARAM_COLS}
 MAP_PARAMS = ["month_12_Sep", "min_7day", "base_flow_index", "max_1day"]
+AGREE_PARAMS = ["month_12_Sep", "min_90day", "min_7day", "max_1day"]
+BENCH_DIR = os.path.join(HERE, "..", "IHA_Results", "benchmark")
+
+
+def benchmark_flagged():
+    """Parameters for which the hydrological-model benchmark gives low alteration in fewer than half
+    as many catchments as the no-change level (flagged in Figure 6 and Table 3)."""
+    b = pd.read_csv(os.path.join(BENCH_DIR, "benchmark_rva_summary.csv"))
+    h = b[b.comparison == "hydrological_model"]
+    return set(h.parameter[h.pct_low < 0.5 * h.pct_low_nochange])
 
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 BELOW, ABOVE = "#2a78d6", "#eb6834"
@@ -125,7 +135,8 @@ def fig_parameter_summary(summary, member):
         ax.grid(axis="x", color=GRID, linewidth=0.5)
         ax.set_axisbelow(True)
     axes[0].set_yticks(y)
-    axes[0].set_yticklabels([LABEL[p] for p in order])
+    flagged = benchmark_flagged()
+    axes[0].set_yticklabels([LABEL[p] + (" †" if p in flagged else "") for p in order])
     axes[0].invert_yaxis()
     fig.supxlabel("Catchments in departure (%); bars = mean of the four members", fontsize=8,
                   y=0.065)
@@ -204,11 +215,11 @@ def direction_class(row):
     return f"{'high' if h < -0.67 else 'mod'}_{side}"
 
 
-def _map_grid(draw, title_fn, legend_handles, name):
+def _map_grid(draw, title_fn, legend_handles, name, params=MAP_PARAMS):
     gb = get_gb_boundary(os.path.join(HERE, "_gb_boundary.gpkg"),
                          os.path.join(HERE, "_ne_10m_countries.geojson"))
-    fig, axes = plt.subplots(len(MAP_PARAMS), 4, figsize=(7.2, 9.6))
-    for i, p in enumerate(MAP_PARAMS):
+    fig, axes = plt.subplots(len(params), 4, figsize=(7.2, 9.6))
+    for i, p in enumerate(params):
         for j, rcp in enumerate(RCPS):
             ax = axes[i, j]
             gb.plot(ax=ax, **MAP_KW)
@@ -246,7 +257,7 @@ def fig_direction_maps(ens, coords):
 
 
 def fig_agreement_maps(ens, coords):
-    d = ens[ens.parameter.isin(MAP_PARAMS)].merge(coords, left_on="catchment_id", right_index=True)
+    d = ens[ens.parameter.isin(AGREE_PARAMS)].merge(coords, left_on="catchment_id", right_index=True)
 
     def draw(ax, p, rcp):
         s = d[(d.parameter == p) & (d.rcp == rcp)].sort_values("n_departure")
@@ -255,7 +266,7 @@ def fig_agreement_maps(ens, coords):
 
     handles = [Line2D([], [], marker="o", ls="", ms=5, mfc=AGR_COLOURS[k], mec="white", label=lab)
                for k, lab in enumerate(AGR_LABELS)]
-    _map_grid(draw, lambda p: LABEL[p], handles, "fig_agreement_maps")
+    _map_grid(draw, lambda p: LABEL[p], handles, "fig_agreement_maps", AGREE_PARAMS)
 
 
 def fig_ensemble_mean_vs_members(summary):

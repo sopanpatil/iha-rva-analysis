@@ -1,11 +1,13 @@
 season,variable,co2pet,original
+DJF,aet,5.19,11.31
 DJF,pet,5.58,11.89
 DJF,pr,14.58,14.58
 DJF,q,6.03,4.14
+JJA,aet,-0.07,0.73
 JJA,pet,27.98,33.51
 JJA,pr,-27.64,-27.64
 JJA,q,-52.3,-56.06
-annual,aet,2.2,4.95
+annual,aet,2.45,5.23
 annual,pet,21.33,27.16
 annual,pr,-4.33,-4.33
 annual,q,-10.68,-13.17

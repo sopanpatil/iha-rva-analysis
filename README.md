@@ -47,7 +47,8 @@ Analysis scripts, in the order they are run
 | `benchmark_observed.py` | Runs HBV with observed CAMELS-GB v2 forcing: KGE reproduction, low-flow metrics, and baseline IHA parameters for observed flows and each simulation. | `IHA_Results/benchmark/` |
 | `benchmark_analysis.py` | RVA benchmark of the modelling chain (hydrological model, climate forcing, full chain). | `IHA_Results/benchmark/` |
 | `lowflow_robustness.py` | Interannual low-flow agreement with observations, and projected change in catchment subsets with good low-flow performance. | `IHA_Results/benchmark/` |
-| `extract_period_means.py` | Baseline and future means of precipitation, temperature, PET, discharge, actual evapotranspiration and soil moisture. | `IHA_Results/period_means/` |
+| `extract_period_means.py` | Baseline and future means of precipitation, temperature, PET, discharge and soil moisture (and a water-balance estimate of actual evapotranspiration, which the figures replace with the output of `simulated_aet.py`). | `IHA_Results/period_means/` |
+| `simulated_aet.py` | Re-runs HBV for every RCP and member, checks the stored discharge is reproduced, and gives the baseline and future means of the simulated actual evapotranspiration. | `IHA_Results/period_means/` |
 | `attribute_associations.py` | Spearman and partial Spearman correlations of Cliff's delta with catchment attributes. | `IHA_Results/attributes/` |
 | `co2_sensitivity_runs.py` | RCP8.5 HBV runs with CO2-adjusted PET. | `IHA_Results/co2_sensitivity*/` |
 | `co2_sensitivity_analysis.py` | Alteration and water balance with the original and CO2-adjusted PET. | `IHA_Results/co2_sensitivity*/` |
@@ -83,8 +84,9 @@ python benchmark_observed.py \
 python benchmark_analysis.py
 python lowflow_robustness.py
 
-# 4. Changes in the forcing and model states
+# 4. Changes in the forcing and model states (simulated_aet.py needs the hbv_model package)
 python extract_period_means.py
+python simulated_aet.py
 
 # 5. Catchment attributes
 python attribute_associations.py --attributes-dir /path/to/CAMELS-GB/attributes
@@ -117,7 +119,7 @@ python scenario_divergence.py
 | `annual/` | `iha_annual_rcp<rcp>_<member>.csv.gz`: the 32 IHA parameters for every catchment and water year of the baseline and future periods (`<member>` is `01`, `04`, `06`, `15` or `ENSEMBLE`). `iha_annual_null_ref<A>_cmp<B>.csv.gz`: baseline IHA parameters of member B with the pulse thresholds of member A. `baseline_identity_check.csv`. |
 | `member_rva/` | `rva_catchment_member.csv.gz` (one row per RCP, member, catchment and parameter), `rva_catchment_ensemble.csv.gz` (summarised across members), `rva_null_catchment.csv.gz` (no-change comparisons), `rva_summary_by_parameter.csv` (percentages of catchments per category, direction and magnitude, with the no-change levels), `rva_summary_ensemble_mean.csv` (the same from ensemble-mean discharge), `nochange_expected_frequency.csv`. |
 | `benchmark/` | KGE reproduction, low-flow metrics, baseline IHA parameters of observed and simulated flows, the RVA benchmark and the low-flow robustness tables. |
-| `period_means/` | Baseline and future means of the forcing and model states. |
+| `period_means/` | Baseline and future means of the forcing and model states, including the HBV-simulated actual evapotranspiration (`period_means_aet.csv.gz`) and the check that the re-runs reproduce the stored discharge. |
 | `attributes/` | Attribute intercorrelation and the rank correlations with Cliff's delta. |
 | `co2_sensitivity/`, `co2_sensitivity_u2_4/` | CO2-adjusted runs for wind speeds of 2 and 4 m/s, with their summaries and a check that the control run reproduces the stored discharge. |
 | top level | The per-run RVA tables in the version 1 format (`rva_results_*`, `iha_pre_*`, `iha_post_*`, `rva_summary_by_parameter_*`; expected frequency 0.5), still written by `chess_scape_iha_analysis.py`. The analysis in the manuscript uses the tables in `annual/` and `member_rva/`. |

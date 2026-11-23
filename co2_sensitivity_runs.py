@@ -41,7 +41,7 @@ IHA_Results/annual/, with pulse thresholds from the run's own baseline.
 Outputs (IHA_Results/co2_sensitivity/)
   iha_annual_rcp85_<member>_co2pet.csv.gz   yearly IHA parameters, CO2-adjusted run
   control_reproduction.csv                   control vs stored discharge, per member
-  period_means_co2pet.csv.gz                 baseline/future means of pr, pet, q, aet
+  period_means_co2pet.csv.gz                 baseline/future means of pr, pet, q and HBV-simulated aet
                                              for the original and CO2-adjusted runs
   co2_concentrations_used.csv                year, CO2 (ppm), rs/70
 
@@ -143,9 +143,10 @@ def camels_wind(pattern, ids):
 def run_one(job):
     cid, params, pr, tas, pet, pet_co2 = job
     from hbv_model.hbv import HBVModel
-    q_ctrl, _ = HBVModel(params).run(pr, tas, pet)
-    q_co2, _ = HBVModel(params).run(pr, tas, pet_co2)
-    return cid, np.asarray(q_ctrl, float), np.asarray(q_co2, float)
+    q_ctrl, s_ctrl = HBVModel(params).run(pr, tas, pet)
+    q_co2, s_co2 = HBVModel(params).run(pr, tas, pet_co2)
+    return (cid, np.asarray(q_ctrl, float), np.asarray(q_co2, float),
+            np.asarray(s_ctrl["ETact"], float), np.asarray(s_co2["ETact"], float))
 
 
 def load(var, member, ids):
@@ -225,12 +226,12 @@ def main():
 
         jobs = [(cid, {p: float(pars.loc[cid, p]) for p in PARAM_COLS},
                  pr[:, j], tas[:, j], pet[:, j], pet_co2[:, j]) for j, cid in enumerate(ids)]
-        q_ctrl = np.full_like(pet, np.nan)
-        q_co2 = np.full_like(pet, np.nan)
+        q_ctrl, q_co2, et_ctrl, et_co2 = (np.full_like(pet, np.nan) for _ in range(4))
         col = {cid: j for j, cid in enumerate(ids)}
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
-            for k, (cid, qc, qx) in enumerate(pool.map(run_one, jobs, chunksize=4)):
-                q_ctrl[:, col[cid]], q_co2[:, col[cid]] = qc, qx
+            for k, (cid, qc, qx, ec, ex) in enumerate(pool.map(run_one, jobs, chunksize=4)):
+                j = col[cid]
+                q_ctrl[:, j], q_co2[:, j], et_ctrl[:, j], et_co2[:, j] = qc, qx, ec, ex
                 if (k + 1) % 100 == 0:
                     print(f"  {k + 1}/{len(jobs)}")
 
@@ -254,18 +255,15 @@ def main():
 
         periods = {"baseline": (PRE_START, PRE_END, N_PRE_YEARS),
                    "future": (POST_START, POST_END, N_POST_YEARS)}
-        for run, (pet_run, q_run) in {"original": (pet, q_ctrl), "co2pet": (pet_co2, q_co2)}.items():
+        for run, (pet_run, q_run, et_run) in {"original": (pet, q_ctrl, et_ctrl),
+                                               "co2pet": (pet_co2, q_co2, et_co2)}.items():
             for p, bounds in periods.items():
-                m_pr, m_pet, m_q = (period_means(v, *bounds) for v in (pr, pet_run, q_run))
+                m_pr, m_pet, m_q, m_aet = (period_means(v, *bounds) for v in (pr, pet_run, q_run, et_run))
                 for season in SEASON_ROWS:
-                    for var, vals in (("pr", m_pr), ("pet", m_pet), ("q", m_q)):
+                    for var, vals in (("pr", m_pr), ("pet", m_pet), ("q", m_q), ("aet", m_aet)):
                         mean_rows.append(pd.DataFrame({"member": member, "run": run, "period": p,
                                                        "season": season, "variable": var,
                                                        "catchment_id": ids, "value": vals[season]}))
-                mean_rows.append(pd.DataFrame({"member": member, "run": run, "period": p,
-                                               "season": "annual", "variable": "aet",
-                                               "catchment_id": ids,
-                                               "value": m_pr["annual"] - m_q["annual"]}))
 
     pd.DataFrame(control_rows).to_csv(os.path.join(out_dir, "control_reproduction.csv"), index=False)
     pd.concat(mean_rows, ignore_index=True).to_csv(
