@@ -135,7 +135,7 @@ pip install matplotlib geopandas pyproj shapely   # figures
 
 ## Citation
 
-If you use this code, please cite the archived release (see `CITATION.cff`).
+If you use this code, please cite the archived release: Patil, S. D., Dallison, R. J. H., and Jahanshahi, A. (2026), iha-rva-analysis: IHA/RVA hydrologic alteration analysis pipeline for Great Britain (v2.0.0), Zenodo, https://doi.org/10.5281/zenodo.24496311 (see also `CITATION.cff`).
 
 ## Licence
 
